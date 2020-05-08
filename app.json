@@ -1,0 +1,17 @@
+{
+  "name": "inventory",
+  "displayName": "inventory",
+  "expo": {
+    "name": "inventory",
+    "slug": "inventory",
+    "version": "1.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
