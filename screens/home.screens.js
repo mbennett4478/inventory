@@ -1,67 +1,46 @@
 import * as React from 'react';
-import { SafeAreaView, ScrollView, Text, FlatList, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { useQuery, useMutation } from '@apollo/react-hooks';
-import { ADD_INVENTORY, GET_INVENTORIES } from '../graphql/inventory';
-import { Appbar, List, IconButton, withTheme, FAB, Portal, Modal, TextInput, Card, Button, ActivityIndicator } from 'react-native-paper';
+import { ADD_INVENTORY, GET_INVENTORIES, update, onComplete, onError } from '../graphql/inventory';
+import { Appbar,  withTheme, FAB, ActivityIndicator } from 'react-native-paper';
 import HomeList from '../components/home-list.components';
 import CreateEditModal from '../components/create-edit-modal.components';
-import { set } from 'react-native-reanimated';
 
 function HomeScreen({ navigation, theme }) {
     const { loading, error, data } = useQuery(GET_INVENTORIES);
-    const [creating, setCreating] = React.useState(false);
-    const [createOrEdit, setCreateOrEdit] = React.useState('create');
-    const [visible, setVisible] = React.useState(false);
-    const [name, setName] = React.useState('');
-    const [errorCreating, setErrorCreating] = React.useState(null);
-
-    const [createInventory] = useMutation(ADD_INVENTORY, {
-        update(cache, { data: { createContainer } }) {
-            const { containers } = cache.readQuery({ query: GET_INVENTORIES });
-            const combined = containers.concat([createContainer]);
-            cache.writeQuery({
-                query: GET_INVENTORIES,
-                data: { containers: combined },
-            });
-        },
-        onCompleted() {
-            setVisible(false);
-            setCreating(false);
-            setName('');
-        },
-        onError(error) {
-            console.log(error);
-            setCreating(false);
-            setErrorCreating(error.message);
-        }
+    const [{ creating, createOrEdit, visible, name, errorCreating }, setState] = React.useState({
+        creating: false,
+        createOrEdit: 'create',
+        visible: false,
+        name: '',
+        errorCreating: null,
+    });
+    const completeCallback = () => setState(state => ({ ...state, visible: false, creating: false, name: '' }));
+    const errorCallback = (error) => {
+        console.log(error);
+        setState(state => ({ ...state, creating: false, errorCreating: error.message }));
+    };
+    const [createInventory] = useMutation(ADD_INVENTORY, { 
+        update,
+        onCompleted: onComplete(completeCallback),
+        onError: onError(errorCallback),
     });
 
-    const dismiss = () => {
-        setVisible(false);
-        setName('');
-    };
-
-    const onFABClick = () => {
-        setCreateOrEdit('create');
-        setVisible(true);
-    }
-
+    const dismiss = () => setState(state => ({ ...state, name: '', visible: false }));
+    const onFABClick = () => setState(state => ({ ...state, name: '', createOrEdit: 'create', visible: true }));
     const addInventory = () => {
-        setCreating(true);
+        setState(state => ({ ...state, createOrEdit: 'create', creating: true }));
         createInventory({ variables: { name }});
     };
-
-    const changeName = (text) => setName(text);
-
-    const gotoInventory = inventory => () => {
-        navigation.push('Inventory', { inventory });
-    };
-    
-    const onEditPressed = (item) => {
-        setCreateOrEdit('edit');
-        setName(item.name);
-        setVisible(true);
+    const editInventory = () => {
+        setState(state => ({ ...state, creating: true }));
+        setTimeout(() => {
+            setState(state => ({ ...state, name: '', creating: false, visible: false }));
+        }, 1000);
     }
+    const changeName = (text) => setState(state => ({ ...state, name: text }));
+    const onEditPressed = (item) => setState(state => ({ ...state, createOrEdit: 'edit', name: item.name, visible: true }));
+    const gotoInventory = inventory => () => navigation.push('Inventory', { inventory });
 
     const onDeletePressed =  (item) => {
         // Delete
@@ -91,42 +70,12 @@ function HomeScreen({ navigation, theme }) {
                         visible={visible}
                         type={createOrEdit}
                         onCreate={addInventory}
-                        onEdit={onEditPressed}
+                        onEdit={editInventory}
                         onDismiss={dismiss}
                         value={name}
                         onChangeText={changeName}
                         loading={creating}
                     />
-                    {/* <Portal>
-                        <Modal visible={visible} onDismiss={dismiss}>
-                            <Card style={{marginHorizontal: 24}}>
-                                <Card.Content>
-                                    <TextInput label='Create a new Inventory' value={name} onChangeText={changeName} mode='outlined' />
-                                </Card.Content>
-                                <Card.Actions style={{justifyContent: 'space-between'}}>
-                                    <Button 
-                                        disabled={!name || name.length <= 0} 
-                                        icon='plus' 
-                                        mode='contained' 
-                                        loading={creating} 
-                                        style={{marginHorizontal: 8, padding: 10}} 
-                                        onPress={addInventory}
-                                    >
-                                        Create
-                                    </Button>
-                                    <Button 
-                                        icon='close' 
-                                        mode='contained' 
-                                        color="#D62828" 
-                                        style={{marginHorizontal: 8, padding: 10}} 
-                                        onPress={dismiss}
-                                    >
-                                        Cancel
-                                    </Button>
-                                </Card.Actions>
-                            </Card>
-                        </Modal>
-                    </Portal> */}
                     <FAB 
                         style={styles.fab}
                         icon="plus"

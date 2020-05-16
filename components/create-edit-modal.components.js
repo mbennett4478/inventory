@@ -2,32 +2,45 @@ import * as React from 'react';
 import { withTheme, Portal, Modal, Card, TextInput, Button } from 'react-native-paper';
 
 function CreateEditModal({ visible, type, onCreate, onEdit, onDismiss, value, onChangeText, loading }) {
-    const [changed, setChanged] = React.useState(type === 'edit');
+    const [changed, setChanged] = React.useState(type === 'create' && !!value);
     const label = type === 'edit' ? 'Edit inventory' : 'Create a new inventory';
     const buttonText = type === 'edit' ? 'Edit' : 'Create';
-
     const onChange = (text) => {
         if (type !== 'edit') {
-            setChanged(!name || name.length <= 0);
+            setChanged((type === 'create' && !!text));
         } 
         onChangeText(text);
     };
 
+    const onAdd = () => {
+        setChanged(false);
+        if (type === 'edit') {
+            onEdit();
+        } else {
+            onCreate();
+        }
+    }
+
+    const onClose = () => {
+        setChanged(false);
+        onDismiss();
+    }
+
     return (
         <Portal>
-            <Modal visible={visible} onDismiss>
+            <Modal visible={visible} onDismiss={onClose}>
                 <Card style={styles.modal}>
                     <Card.Content>
                         <TextInput label={label} value={value} onChangeText={onChange} mode="outlined" />
                     </Card.Content>
                     <Card.Actions style={styles.actions}>
                         <Button 
-                            disabled={changed}
+                            disabled={!(type === 'edit' || changed) || loading}
                             icon="plus"
                             mode="contained"
                             loading={loading}
                             style={styles.createEditButton}
-                            onPress={type === 'edit' ? onEdit : onCreate}
+                            onPress={onAdd}
                         >
                             {buttonText}
                         </Button>
@@ -36,7 +49,7 @@ function CreateEditModal({ visible, type, onCreate, onEdit, onDismiss, value, on
                             mode="contained"
                             color="#D62828"
                             style={styles.createEditButton}
-                            onPress={onDismiss}
+                            onPress={onClose}
                         >
                             Cancel
                         </Button>
