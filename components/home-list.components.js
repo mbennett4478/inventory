@@ -1,30 +1,44 @@
 import * as React from 'react';
 import { FlatList } from 'react-native';
 import { List, IconButton, Menu, withTheme, Divider } from 'react-native-paper';
-import { set } from 'react-native-reanimated';
 
 const left = (props) => <List.Icon {...props} icon='folder' />;
 
-const openMenu = setVisible => () => {
-    setVisible(true);
-}
+// const openMenu = setVisible => () => {
+//     setVisible(true);
+// }
 
-const closeMenu = setVisible => () => {
-    setVisible(false);
-}
+// const closeMenu = setVisible => () => {
+//     setVisible(false);
+// }
 
-function RenderItem({ item, index, theme, onItemClick }) {
+
+function RenderItem({ item, index, theme, onItemClick, onEdit, onDelete }) {
     const [visible, setVisible] = React.useState(false);
+
+    const toggleMenu = () => {
+        setVisible(!visible);
+    }
+
+    const onEditCb = () => {
+        onEdit(item);
+        toggleMenu();
+    }
+
+    const onDeleteCb = () => {
+        onDelete(item);
+        toggleMenu();
+    }
 
     const right = (props) => (
         <Menu 
             visible={visible}
-            onDismiss={closeMenu(setVisible)}
-            anchor={<IconButton {...props} icon='dots-vertical' onPress={openMenu(setVisible)} />}
+            onDismiss={toggleMenu}
+            anchor={<IconButton {...props} icon='dots-vertical' onPress={toggleMenu} />}
         >
-            <Menu.Item title='Edit' />
+            <Menu.Item title='Edit' onPress={onEditCb} />
             <Divider />
-            <Menu.Item title='Delete'/>
+            <Menu.Item title='Delete' onPress={onDeleteCb} />
         </Menu>
     );
 
@@ -41,13 +55,15 @@ function RenderItem({ item, index, theme, onItemClick }) {
     );
 }
 
-function HomeList({ data, theme, onItemClick }) {
+function HomeList({ data, theme, onItemClick, onEdit, onDelete }) {
     function renderItem({ item, index }) {
         return (
             <RenderItem 
                 item={item}
                 index={index}
                 theme={theme}
+                onEdit={onEdit}
+                onDelete={onDelete}
                 onItemClick={onItemClick}
             />
         );

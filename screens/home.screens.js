@@ -4,11 +4,13 @@ import { useQuery, useMutation } from '@apollo/react-hooks';
 import { ADD_INVENTORY, GET_INVENTORIES } from '../graphql/inventory';
 import { Appbar, List, IconButton, withTheme, FAB, Portal, Modal, TextInput, Card, Button, ActivityIndicator } from 'react-native-paper';
 import HomeList from '../components/home-list.components';
+import CreateEditModal from '../components/create-edit-modal.components';
 import { set } from 'react-native-reanimated';
 
 function HomeScreen({ navigation, theme }) {
     const { loading, error, data } = useQuery(GET_INVENTORIES);
     const [creating, setCreating] = React.useState(false);
+    const [createOrEdit, setCreateOrEdit] = React.useState('create');
     const [visible, setVisible] = React.useState(false);
     const [name, setName] = React.useState('');
     const [errorCreating, setErrorCreating] = React.useState(null);
@@ -39,6 +41,11 @@ function HomeScreen({ navigation, theme }) {
         setName('');
     };
 
+    const onFABClick = () => {
+        setCreateOrEdit('create');
+        setVisible(true);
+    }
+
     const addInventory = () => {
         setCreating(true);
         createInventory({ variables: { name }});
@@ -48,6 +55,17 @@ function HomeScreen({ navigation, theme }) {
 
     const gotoInventory = inventory => () => {
         navigation.push('Inventory', { inventory });
+    };
+    
+    const onEditPressed = (item) => {
+        setCreateOrEdit('edit');
+        setName(item.name);
+        setVisible(true);
+    }
+
+    const onDeletePressed =  (item) => {
+        // Delete
+        console.log("delete");
     }
 
     if (error) return <Text>Error! {error.message}</Text>;
@@ -63,8 +81,23 @@ function HomeScreen({ navigation, theme }) {
                 </View>
             ) : (
                 <>
-                    <HomeList data={data.containers} onItemClick={gotoInventory} />
-                    <Portal>
+                    <HomeList 
+                        data={data.containers} 
+                        onItemClick={gotoInventory} 
+                        onEdit={onEditPressed}
+                        onDelete={onDeletePressed}
+                    />
+                    <CreateEditModal 
+                        visible={visible}
+                        type={createOrEdit}
+                        onCreate={addInventory}
+                        onEdit={onEditPressed}
+                        onDismiss={dismiss}
+                        value={name}
+                        onChangeText={changeName}
+                        loading={creating}
+                    />
+                    {/* <Portal>
                         <Modal visible={visible} onDismiss={dismiss}>
                             <Card style={{marginHorizontal: 24}}>
                                 <Card.Content>
@@ -93,12 +126,12 @@ function HomeScreen({ navigation, theme }) {
                                 </Card.Actions>
                             </Card>
                         </Modal>
-                    </Portal>
+                    </Portal> */}
                     <FAB 
                         style={styles.fab}
                         icon="plus"
                         color={theme.colors.text}
-                        onPress={() => setVisible(true)}
+                        onPress={onFABClick}
                     />
                 </>
             )}
