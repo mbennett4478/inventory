@@ -91,7 +91,7 @@ function HomeScreen({ navigation, theme }) {
 const styles = StyleSheet.create({
     fab: {
         position: 'absolute',
-        margin: 16,
+        margin: 32,
         right: 0,
         bottom: 0,
     },

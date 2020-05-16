@@ -4,12 +4,12 @@
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "web": "expo start --web",
-    "start": "expo start",
+    "start": "expo start --lan",
     "test": "jest"
   },
   "dependencies": {
     "@apollo/react-hooks": "^3.1.5",
-    "@react-native-community/masked-view": "^0.1.10",
+    "@react-native-community/masked-view": "^0.1.6",
     "@react-navigation/native": "^5.2.3",
     "@react-navigation/stack": "^5.2.18",
     "apollo-boost": "^0.4.7",

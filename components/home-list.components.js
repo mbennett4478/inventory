@@ -78,7 +78,7 @@ function HomeList({ data, theme, onItemClick, onEdit, onDelete }) {
                     theme={theme}
                     removeClippedSubviews={true}
                     initialNumToRender={13}
-                    maxToRenderPerBatch={1}
+                    maxToRenderPerBatch={5}
                 />
             }
         </>
