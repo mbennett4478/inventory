@@ -35,6 +35,14 @@ export const ADD_INVENTORY = gql`
     }
 `;
 
+export const DELETE_INVENTORY = gql`
+    mutation DeleteInventory($id: ID!) {
+        deleteContainer(id: $id) {
+            id
+        }
+    }
+`;
+
 export function update(cache, { data: { createContainer } }) {
     const { containers } = cache.readQuery({ query: GET_INVENTORIES });
     const combined = containers.concat([createContainer]);

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { FlatList } from 'react-native';
-import { List, IconButton, Menu, withTheme, Divider } from 'react-native-paper';
+import { List, IconButton, Menu, withTheme, Divider, ActivityIndicator } from 'react-native-paper';
 
 const left = (props) => <List.Icon {...props} icon='folder' />;
 
@@ -13,34 +13,40 @@ const left = (props) => <List.Icon {...props} icon='folder' />;
 // }
 
 
-function RenderItem({ item, index, theme, onItemClick, onEdit, onDelete }) {
+function RenderItem({ item, index, theme, onItemClick, onEdit, onDelete, loadingDelete, itemSelectedId }) {
     const [visible, setVisible] = React.useState(false);
 
     const toggleMenu = () => {
         setVisible(!visible);
-    }
+    };
 
     const onEditCb = () => {
         onEdit(item);
         toggleMenu();
-    }
+    };
 
     const onDeleteCb = () => {
         onDelete(item);
         toggleMenu();
-    }
+    };
 
-    const right = (props) => (
-        <Menu 
-            visible={visible}
-            onDismiss={toggleMenu}
-            anchor={<IconButton {...props} icon='dots-vertical' onPress={toggleMenu} />}
-        >
-            <Menu.Item title='Edit' onPress={onEditCb} />
-            <Divider />
-            <Menu.Item title='Delete' onPress={onDeleteCb} />
-        </Menu>
-    );
+    const right = (props) => {
+        if (loadingDelete && !!itemSelectedId &&  itemSelectedId === item.id) {
+            return <ActivityIndicator animating={true} />;
+        }
+
+        return (
+            <Menu 
+                visible={visible}
+                onDismiss={toggleMenu}
+                anchor={<IconButton {...props} icon='dots-vertical' onPress={toggleMenu} />}
+            >
+                <Menu.Item title='Edit' onPress={onEditCb} />
+                <Divider />
+                <Menu.Item title='Delete' onPress={onDeleteCb} />
+            </Menu>
+        );
+    }
 
     return (
         <List.Item
@@ -55,7 +61,7 @@ function RenderItem({ item, index, theme, onItemClick, onEdit, onDelete }) {
     );
 }
 
-function HomeList({ data, theme, onItemClick, onEdit, onDelete }) {
+function HomeList({ data, theme, onItemClick, onEdit, onDelete, menuLoadingDelete, itemSelectedId }) {
     function renderItem({ item, index }) {
         return (
             <RenderItem 
@@ -65,6 +71,8 @@ function HomeList({ data, theme, onItemClick, onEdit, onDelete }) {
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onItemClick={onItemClick}
+                loadingDelete={menuLoadingDelete}
+                itemSelectedId={itemSelectedId}
             />
         );
     }
