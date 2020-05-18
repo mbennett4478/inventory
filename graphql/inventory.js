@@ -42,24 +42,3 @@ export const DELETE_INVENTORY = gql`
         }
     }
 `;
-
-export function update(cache, { data: { createContainer } }) {
-    const { containers } = cache.readQuery({ query: GET_INVENTORIES });
-    const combined = containers.concat([createContainer]);
-    cache.writeQuery({
-        query: GET_INVENTORIES,
-        data: { containers: combined },
-    });
-}
-
-export function onComplete(cb) {
-    return function () {
-        cb();
-    }
-}
-
-export function onError(cb) {
-    return function (error) {
-        cb(error);
-    }
-}

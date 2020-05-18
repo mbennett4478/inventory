@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Text, StyleSheet, View } from 'react-native';
 import { useQuery, useMutation } from '@apollo/react-hooks';
-import { ADD_INVENTORY, GET_INVENTORIES, update, DELETE_INVENTORY } from '../graphql/inventory';
+import { ADD_INVENTORY, GET_INVENTORIES, DELETE_INVENTORY } from '../graphql/inventory';
 import { Appbar,  withTheme, FAB, ActivityIndicator } from 'react-native-paper';
 import HomeList from '../components/home-list.components';
 import CreateEditModal from '../components/create-edit-modal.components';
