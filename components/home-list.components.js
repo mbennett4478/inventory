@@ -26,7 +26,7 @@ function RenderItem({ item, index, theme, onItemClick, onEdit, onDelete, loading
     };
 
     const onDeleteCb = () => {
-        onDelete(item);
+        onDelete(item, index);
         toggleMenu();
     };
 
@@ -50,7 +50,7 @@ function RenderItem({ item, index, theme, onItemClick, onEdit, onDelete, loading
 
     return (
         <List.Item
-            key={index}
+            key={`${item.id}-${index}`}
             title={item.name}
             description={`${item.items.length} items`}
             left={left}

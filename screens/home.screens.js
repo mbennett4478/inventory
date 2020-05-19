@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet, View, InteractionManager } from 'react-native';
 import { useQuery, useMutation, useApolloClient } from '@apollo/react-hooks';
 import { ADD_INVENTORY, GET_INVENTORIES, DELETE_INVENTORY } from '../graphql/inventory';
 import { Appbar,  withTheme, FAB, ActivityIndicator, Snackbar } from 'react-native-paper';
@@ -9,16 +9,18 @@ import CreateEditModal from '../components/create-edit-modal.components';
 function HomeScreen({ navigation, theme }) {
     const { loading: loadingGet, error: errorGet, data } = useQuery(GET_INVENTORIES);
     const client = useApolloClient();
-    const [{ paco, createOrEdit, visible, name, errorCreating, itemSelectedId, itemToBeDeleted, snackbarVisible }, setState] = React.useState({
+    const [snackbarVisible, setSnackbarVisible] = React.useState(false);
+    const [{ createOrEdit, visible, name, errorCreating, itemSelectedId, itemToBeDeleted, itemToBeDeletedIndex }, setState] = React.useState({
         createOrEdit: 'create',
         visible: false,
         name: '',
         errorCreating: null,
         itemSelectedId: null, 
         itemToBeDeleted: null,
-        snackbarVisible: false,
-        paco: null,
+        itemToBeDeletedIndex: null,
     });
+    const itemToBeDeletedRef = React.useRef(itemToBeDeleted);
+    itemToBeDeletedRef.current = itemToBeDeleted;
 
     const [createInventory, { loading: loadingCreate , error: errorCreate }] = useMutation(ADD_INVENTORY, { 
         update(cache, { data: { createContainer }}) {
@@ -64,11 +66,24 @@ function HomeScreen({ navigation, theme }) {
     const onEditPressed = (item) => setState(state => ({ ...state, createOrEdit: 'edit', name: item.name, visible: true }));
     const gotoInventory = inventory => () => navigation.push('Inventory', { inventory });
 
-    const onDeletePressed = async (item) => {
+    const onDeletePressed = (item, index) => {
+    // const onDeletePressed = async (item, index) => {
         try {
-            setState({ itemSelectedId: item.id,  });
-            await deleteInventory({ variables: { id: item.id }});
-            setState({ itemSelectedId: null, itemToBeDeleted: item, snackbarVisible: true });
+            setState(state => ({ ...state, itemSelectedId: item.id, itemToBeDeletedIndex: index }));
+            const { containers } = client.readQuery({ query: GET_INVENTORIES });
+            // await deleteInventory({ variables: { id: item.id }});
+            const combinded =  containers.filter((container) => item.id !== container.id);
+            client.writeQuery({ query: GET_INVENTORIES, data: { containers: combinded } });
+            setState(state => ({ ...state, itemSelectedId: null, itemToBeDeleted: item }));
+            setSnackbarVisible(true);
+            setTimeout(function () {
+                if (itemToBeDeletedRef.current) {
+                    const found = data.containers.find((c) => c.id == itemToBeDeletedRef.current.id);
+                    console.log(`found: ${found}`);
+                } else {
+                    console.log('nope');
+                }
+            }, 8000);
         } catch (err) {
             console.log(errorDelete);
         }
@@ -82,13 +97,8 @@ function HomeScreen({ navigation, theme }) {
         }
     };
 
-    const undoDelete = async () => {
-        try {
-            setState(state => ({ ...state, itemToBeDeleted: null }));
-            client
-        } catch (err) {
-            console.log(err.message);
-        }
+    const wtf = () => {
+        setSnackbarVisible(false);
     };
 
     if (errorGet) return <Text>Error! {errorGet.message}</Text>;
@@ -130,14 +140,22 @@ function HomeScreen({ navigation, theme }) {
                     />
                     <Snackbar
                         visible={snackbarVisible}
-                        onDismiss={() => {
-                            console.log(`paco: ${paco}`);
-                            setState(state => ({ ...state, snackbarVisible: false }));
-                        }}
+                        onDismiss={wtf}
                         action={{
                             label: 'Undo',
                             onPress: () => {
-                                setState(state => ({ ...state, paco: true }));
+                                const { containers } = client.readQuery({ query: GET_INVENTORIES });
+                                const combined = [
+                                    ...containers.slice(0, itemToBeDeletedIndex),
+                                    itemToBeDeleted,
+                                    ...containers.slice(itemToBeDeletedIndex),
+                                ];
+
+                                client.writeQuery({ 
+                                    query: GET_INVENTORIES,
+                                    data: { containers: combined },
+                                });
+                                setState(state => ({ ...state, itemToBeDeleted: null }));
                             },
                         }}
                         theme={theme}
