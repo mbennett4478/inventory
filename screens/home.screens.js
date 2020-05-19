@@ -1,19 +1,23 @@
 import * as React from 'react';
 import { Text, StyleSheet, View } from 'react-native';
-import { useQuery, useMutation } from '@apollo/react-hooks';
+import { useQuery, useMutation, useApolloClient } from '@apollo/react-hooks';
 import { ADD_INVENTORY, GET_INVENTORIES, DELETE_INVENTORY } from '../graphql/inventory';
-import { Appbar,  withTheme, FAB, ActivityIndicator } from 'react-native-paper';
+import { Appbar,  withTheme, FAB, ActivityIndicator, Snackbar } from 'react-native-paper';
 import HomeList from '../components/home-list.components';
 import CreateEditModal from '../components/create-edit-modal.components';
 
 function HomeScreen({ navigation, theme }) {
     const { loading: loadingGet, error: errorGet, data } = useQuery(GET_INVENTORIES);
-    const [{ createOrEdit, visible, name, errorCreating, itemSelectedId }, setState] = React.useState({
+    const client = useApolloClient();
+    const [{ paco, createOrEdit, visible, name, errorCreating, itemSelectedId, itemToBeDeleted, snackbarVisible }, setState] = React.useState({
         createOrEdit: 'create',
         visible: false,
         name: '',
         errorCreating: null,
         itemSelectedId: null, 
+        itemToBeDeleted: null,
+        snackbarVisible: false,
+        paco: null,
     });
 
     const [createInventory, { loading: loadingCreate , error: errorCreate }] = useMutation(ADD_INVENTORY, { 
@@ -62,11 +66,28 @@ function HomeScreen({ navigation, theme }) {
 
     const onDeletePressed = async (item) => {
         try {
-            setState({ itemSelectedId: item.id });
+            setState({ itemSelectedId: item.id,  });
             await deleteInventory({ variables: { id: item.id }});
-            setState({ itemSelectedId: null });
+            setState({ itemSelectedId: null, itemToBeDeleted: item, snackbarVisible: true });
         } catch (err) {
             console.log(errorDelete);
+        }
+    };
+    
+    const persistDelete = async () => {
+        try {
+            await deleteInventory({ variables: { id: itemToBeDeleted.id } });
+        } catch (err) {
+            console.log(err.message);
+        }
+    };
+
+    const undoDelete = async () => {
+        try {
+            setState(state => ({ ...state, itemToBeDeleted: null }));
+            client
+        } catch (err) {
+            console.log(err.message);
         }
     };
 
@@ -107,6 +128,22 @@ function HomeScreen({ navigation, theme }) {
                         color={theme.colors.text}
                         onPress={onFABClick}
                     />
+                    <Snackbar
+                        visible={snackbarVisible}
+                        onDismiss={() => {
+                            console.log(`paco: ${paco}`);
+                            setState(state => ({ ...state, snackbarVisible: false }));
+                        }}
+                        action={{
+                            label: 'Undo',
+                            onPress: () => {
+                                setState(state => ({ ...state, paco: true }));
+                            },
+                        }}
+                        theme={theme}
+                    >
+                        <Text>Taco</Text>
+                    </Snackbar>
                 </>
             )}
         </>
