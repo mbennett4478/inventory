@@ -57,48 +57,44 @@ function HomeScreen({ navigation, theme }) {
         } 
     };
 
-    const editInventory = () => {
-        setTimeout(() => {
-            setState(state => ({ ...state, name: '', visible: false }));
-        }, 1000);
-    }
+    // TODO: add logic and endpoint for editing an inventory
+    const editInventory = () => {}
+
     const changeName = (text) => setState(state => ({ ...state, name: text }));
     const onEditPressed = (item) => setState(state => ({ ...state, createOrEdit: 'edit', name: item.name, visible: true }));
     const gotoInventory = inventory => () => navigation.push('Inventory', { inventory });
 
     const onDeletePressed = (item, index) => {
-    // const onDeletePressed = async (item, index) => {
-        try {
-            setState(state => ({ ...state, itemSelectedId: item.id, itemToBeDeletedIndex: index }));
-            const { containers } = client.readQuery({ query: GET_INVENTORIES });
-            // await deleteInventory({ variables: { id: item.id }});
-            const combinded =  containers.filter((container) => item.id !== container.id);
-            client.writeQuery({ query: GET_INVENTORIES, data: { containers: combinded } });
-            setState(state => ({ ...state, itemSelectedId: null, itemToBeDeleted: item }));
-            setSnackbarVisible(true);
-            setTimeout(function () {
-                if (itemToBeDeletedRef.current) {
-                    const found = data.containers.find((c) => c.id == itemToBeDeletedRef.current.id);
-                    console.log(`found: ${found}`);
-                } else {
-                    console.log('nope');
-                }
-            }, 8000);
-        } catch (err) {
-            console.log(errorDelete);
-        }
-    };
-    
-    const persistDelete = async () => {
-        try {
-            await deleteInventory({ variables: { id: itemToBeDeleted.id } });
-        } catch (err) {
-            console.log(err.message);
-        }
+        setState(state => ({ ...state, itemSelectedId: item.id, itemToBeDeletedIndex: index }));
+        const { containers } = client.readQuery({ query: GET_INVENTORIES });
+        const combined =  containers.filter((container) => item.id !== container.id);
+        client.writeQuery({ query: GET_INVENTORIES, data: { containers: combined } });
+        setState(state => ({ ...state, itemSelectedId: null, itemToBeDeleted: item }));
+        setSnackbarVisible(true);
     };
 
-    const wtf = () => {
+    const onSnackbarDismiss = () => {
+        setTimeout(async () => {
+            if (itemToBeDeletedRef.current) {
+                await deleteInventory({ variables: { id: itemToBeDeletedRef.current.id }});
+            }
+        }, 5000);
         setSnackbarVisible(false);
+    };
+
+    const onSnackbarAction = () => {
+        const { containers } = client.readQuery({ query: GET_INVENTORIES });
+        const combined = [
+            ...containers.slice(0, itemToBeDeletedIndex),
+            itemToBeDeleted,
+            ...containers.slice(itemToBeDeletedIndex),
+        ];
+
+        client.writeQuery({ 
+            query: GET_INVENTORIES,
+            data: { containers: combined },
+        });
+        setState(state => ({ ...state, itemToBeDeleted: null }));
     };
 
     if (errorGet) return <Text>Error! {errorGet.message}</Text>;
@@ -140,25 +136,13 @@ function HomeScreen({ navigation, theme }) {
                     />
                     <Snackbar
                         visible={snackbarVisible}
-                        onDismiss={wtf}
+                        onDismiss={onSnackbarDismiss}
                         action={{
                             label: 'Undo',
-                            onPress: () => {
-                                const { containers } = client.readQuery({ query: GET_INVENTORIES });
-                                const combined = [
-                                    ...containers.slice(0, itemToBeDeletedIndex),
-                                    itemToBeDeleted,
-                                    ...containers.slice(itemToBeDeletedIndex),
-                                ];
-
-                                client.writeQuery({ 
-                                    query: GET_INVENTORIES,
-                                    data: { containers: combined },
-                                });
-                                setState(state => ({ ...state, itemToBeDeleted: null }));
-                            },
+                            onPress: onSnackbarAction,
                         }}
                         theme={theme}
+                        style={{backgroundColor: theme.colors.surface}}
                     >
                         <Text>Taco</Text>
                     </Snackbar>
